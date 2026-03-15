@@ -1,8 +1,8 @@
 ---
 layout: ../layout/BlogPostLayout.astro
 url: agentic-development
-title: Agentic Development Doesn't Make You a Worse Engineer
-description: It Removes the Tax That Experience Placed on Your Momentum
+title: "Agentic Development Doesn't Make You a Worse Engineer. It Removes the Tax That Experience Placed on Your Momentum"
+description: "There's a trap that some developers fall into that nobody warns you about."
 date: "2026-03-15"
 ---
 
