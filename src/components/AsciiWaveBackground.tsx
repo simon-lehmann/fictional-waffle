@@ -56,7 +56,7 @@ export default function AsciiWaveBackground() {
     const els: HTMLDivElement[] = [];
     for (let i = 0; i < ROW_COUNT; i++) {
       const el = document.createElement("div");
-      el.style.cssText = `white-space:nowrap;overflow:hidden;line-height:${LINE_HEIGHT}px;text-align:center`;
+      el.style.cssText = `white-space:nowrap;line-height:${LINE_HEIGHT}px;text-align:center`;
       wrapper.appendChild(el);
       els.push(el);
     }
