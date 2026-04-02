@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import { prepareWithSegments, layoutNextLine } from "@chenglou/pretext";
 import type { PreparedTextWithSegments, LayoutCursor } from "@chenglou/pretext";
 
-// Readable ASCII wave characters — clearly text, not noise
+// Real readable words — you can actually read these as sentences
 const SOURCE =
-  "/{\\~ _-~=wave /{\\~ _-~=flow /{\\~ _-~=drift /{\\~ _-~=pulse /{\\~ _-~=sync /{\\~ _-~=echo /{\\~ _-~=tide /{\\~ _-~=rise ";
+  "wave after wave the tide rolls in and the current drifts along the shore where light meets water and the horizon bends into the distance echoing pulses of rhythm flowing endlessly forward through layers of motion rising and falling like breath ";
 
 function generateText(length: number): string {
   let text = "";
@@ -12,9 +12,9 @@ function generateText(length: number): string {
   return text.slice(0, length);
 }
 
-const ROW_COUNT = 55;
-const LINE_HEIGHT = 26;
-const FONT_SIZE = 18;
+const ROW_COUNT = 40;
+const LINE_HEIGHT = 36;
+const FONT_SIZE = 24;
 const PHASE_SPEED = 0.01;
 
 function computeMaxWidth(
@@ -22,9 +22,9 @@ function computeMaxWidth(
   phase: number,
   viewportWidth: number,
 ): number {
-  const base = viewportWidth * 0.45;
-  const amp1 = viewportWidth * 0.22;
-  const amp2 = viewportWidth * 0.09;
+  const base = viewportWidth * 0.4;
+  const amp1 = viewportWidth * 0.25;
+  const amp2 = viewportWidth * 0.1;
   return (
     base +
     amp1 * Math.sin(row * 0.16 + phase) +
@@ -42,19 +42,21 @@ export default function AsciiWaveBackground() {
     const text = generateText(20000);
     let prepared: PreparedTextWithSegments;
     try {
-      prepared = prepareWithSegments(text, `${FONT_SIZE}px monospace`);
+      prepared = prepareWithSegments(
+        text,
+        `${FONT_SIZE}px 'Courier New', Courier, monospace`,
+      );
     } catch {
       return;
     }
 
-    // Single wave layer with per-line opacity for depth
     const wrapper = document.createElement("div");
     wrapper.style.cssText =
-      "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px";
+      "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center";
     const els: HTMLDivElement[] = [];
     for (let i = 0; i < ROW_COUNT; i++) {
       const el = document.createElement("div");
-      el.style.cssText = `white-space:nowrap;overflow:hidden;height:${LINE_HEIGHT}px;line-height:${LINE_HEIGHT}px;text-align:center;letter-spacing:0.15em`;
+      el.style.cssText = `white-space:nowrap;overflow:hidden;height:${LINE_HEIGHT}px;line-height:${LINE_HEIGHT}px;text-align:center`;
       wrapper.appendChild(el);
       els.push(el);
     }
@@ -75,9 +77,7 @@ export default function AsciiWaveBackground() {
         if (!line) break;
         els[i].textContent = line.text;
         els[i].style.width = maxW + "px";
-        // Vary opacity per row with a secondary wave for a shimmer effect
-        const rowOpacity =
-          0.35 + 0.15 * Math.sin(i * 0.25 + phase * 1.3);
+        const rowOpacity = 0.35 + 0.15 * Math.sin(i * 0.25 + phase * 1.3);
         els[i].style.opacity = String(rowOpacity);
         cursor = line.end;
       }
