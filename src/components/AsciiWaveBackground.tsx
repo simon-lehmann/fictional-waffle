@@ -2,29 +2,33 @@ import { useEffect, useRef } from "react";
 import { prepareWithSegments, layoutNextLine } from "@chenglou/pretext";
 import type { PreparedTextWithSegments, LayoutCursor } from "@chenglou/pretext";
 
-const GLYPHS = "◇ △ ○ □ ◆ ▲ ● ■ · ◦ ◎ ◉ ⬡ ⬢ ";
+// Readable ASCII wave characters — clearly text, not noise
+const SOURCE =
+  "/{\\~ _-~=wave /{\\~ _-~=flow /{\\~ _-~=drift /{\\~ _-~=pulse /{\\~ _-~=sync /{\\~ _-~=echo /{\\~ _-~=tide /{\\~ _-~=rise ";
 
 function generateText(length: number): string {
   let text = "";
-  while (text.length < length) text += GLYPHS;
+  while (text.length < length) text += SOURCE;
   return text.slice(0, length);
 }
 
-const ROW_COUNT = 60;
-const LINE_HEIGHT = 20;
-const FONT = "14px monospace";
-const BASE_WIDTH = 500;
-const WAVE_AMP_1 = 180;
-const WAVE_FREQ_1 = 0.18;
-const WAVE_AMP_2 = 80;
-const WAVE_FREQ_2 = 0.31;
-const PHASE_SPEED = 0.012;
+const ROW_COUNT = 55;
+const LINE_HEIGHT = 26;
+const FONT_SIZE = 18;
+const PHASE_SPEED = 0.01;
 
-function computeMaxWidth(row: number, phase: number): number {
+function computeMaxWidth(
+  row: number,
+  phase: number,
+  viewportWidth: number,
+): number {
+  const base = viewportWidth * 0.45;
+  const amp1 = viewportWidth * 0.22;
+  const amp2 = viewportWidth * 0.09;
   return (
-    BASE_WIDTH +
-    WAVE_AMP_1 * Math.sin(row * WAVE_FREQ_1 + phase) +
-    WAVE_AMP_2 * Math.sin(row * WAVE_FREQ_2 + phase * 1.7)
+    base +
+    amp1 * Math.sin(row * 0.16 + phase) +
+    amp2 * Math.sin(row * 0.37 + phase * 1.5)
   );
 }
 
@@ -35,59 +39,46 @@ export default function AsciiWaveBackground() {
     const container = containerRef.current;
     if (!container) return;
 
-    // Prepare text once — this is the only DOM-touching measurement.
-    // After this, every layout call is pure arithmetic.
-    const text = generateText(15000);
+    const text = generateText(20000);
     let prepared: PreparedTextWithSegments;
     try {
-      prepared = prepareWithSegments(text, FONT);
+      prepared = prepareWithSegments(text, `${FONT_SIZE}px monospace`);
     } catch {
-      return; // graceful fallback if canvas unavailable (SSR)
+      return;
     }
 
-    // Pre-create line elements for both wave layers
-    const createLayer = (opacity: number) => {
-      const layer = document.createElement("div");
-      layer.style.cssText = `position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:${opacity}`;
-      const els: HTMLDivElement[] = [];
-      for (let i = 0; i < ROW_COUNT; i++) {
-        const el = document.createElement("div");
-        el.style.cssText = `white-space:nowrap;overflow:hidden;height:${LINE_HEIGHT}px;line-height:${LINE_HEIGHT}px;text-align:center;will-change:contents`;
-        layer.appendChild(el);
-        els.push(el);
-      }
-      container.appendChild(layer);
-      return els;
-    };
-
-    const layer1 = createLayer(1);
-    const layer2 = createLayer(0.5);
+    // Single wave layer with per-line opacity for depth
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText =
+      "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px";
+    const els: HTMLDivElement[] = [];
+    for (let i = 0; i < ROW_COUNT; i++) {
+      const el = document.createElement("div");
+      el.style.cssText = `white-space:nowrap;overflow:hidden;height:${LINE_HEIGHT}px;line-height:${LINE_HEIGHT}px;text-align:center;letter-spacing:0.15em`;
+      wrapper.appendChild(el);
+      els.push(el);
+    }
+    container.appendChild(wrapper);
 
     let phase = 0;
     let raf: number;
+    const vw = () => container.offsetWidth || window.innerWidth;
 
     const animate = () => {
       phase += PHASE_SPEED;
+      const w = vw();
 
-      // Layer 1 — primary wave
       let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 };
       for (let i = 0; i < ROW_COUNT; i++) {
-        const maxW = computeMaxWidth(i, phase);
+        const maxW = computeMaxWidth(i, phase, w);
         const line = layoutNextLine(prepared, cursor, maxW);
         if (!line) break;
-        layer1[i].textContent = line.text;
-        layer1[i].style.width = maxW + "px";
-        cursor = line.end;
-      }
-
-      // Layer 2 — secondary wave (offset phase + different amplitude)
-      cursor = { segmentIndex: 0, graphemeIndex: 0 };
-      for (let i = 0; i < ROW_COUNT; i++) {
-        const maxW = computeMaxWidth(i, phase * 0.7 + Math.PI);
-        const line = layoutNextLine(prepared, cursor, maxW);
-        if (!line) break;
-        layer2[i].textContent = line.text;
-        layer2[i].style.width = maxW + "px";
+        els[i].textContent = line.text;
+        els[i].style.width = maxW + "px";
+        // Vary opacity per row with a secondary wave for a shimmer effect
+        const rowOpacity =
+          0.12 + 0.08 * Math.sin(i * 0.25 + phase * 1.3);
+        els[i].style.opacity = String(rowOpacity);
         cursor = line.end;
       }
 
@@ -110,9 +101,9 @@ export default function AsciiWaveBackground() {
         position: "fixed",
         inset: 0,
         overflow: "hidden",
-        color: "rgba(148, 163, 184, 0.07)",
-        fontSize: "14px",
-        fontFamily: "monospace",
+        color: "rgb(100, 116, 139)",
+        fontSize: `${FONT_SIZE}px`,
+        fontFamily: "'Courier New', Courier, monospace",
         pointerEvents: "none",
         zIndex: 0,
         userSelect: "none",
