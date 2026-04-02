@@ -18,7 +18,7 @@ function generateText(length: number): string {
 // Types
 // ---------------------------------------------------------------------------
 type Interval = { left: number; right: number };
-type PositionedLine = { x: number; y: number; text: string; width: number };
+type PositionedLine = { x: number; y: number; text: string; width: number; opacity: number };
 
 type WaveObstacle = {
   baseX: number; // fraction of viewport width (0–1)
@@ -35,7 +35,7 @@ const FONT = "10px 'Courier New', Courier, monospace";
 const LINE_HEIGHT = 13;
 const PHASE_SPEED = 0.012;
 const MIN_SLOT_WIDTH = 60; // ignore slivers narrower than ~4 chars
-const SPAN_POOL_SIZE = 250;
+const SPAN_POOL_SIZE = 500;
 
 const WAVES: WaveObstacle[] = [
   { baseX: 0.33, amplitude: 0.08, frequency: 0.007, halfWidth: 45, speed: 0.4 },
@@ -98,6 +98,27 @@ function carveTextLineSlots(base: Interval, blocked: Interval[]): Interval[] {
 // ---------------------------------------------------------------------------
 // Compute full layout — pure function, no DOM
 // ---------------------------------------------------------------------------
+// Edge glow: compute min distance from a slot edge to any blocked interval edge
+const GLOW_RADIUS = 80; // px — how far the glow reaches from a channel edge
+const BASE_OPACITY = 0.2;
+const EDGE_OPACITY = 0.7;
+
+function edgeOpacity(slot: Interval, blocked: Interval[]): number {
+  let minDist = Infinity;
+  for (let i = 0; i < blocked.length; i++) {
+    const b = blocked[i]!;
+    // Distance from slot's left edge to block's right edge (slot sits right of block)
+    const dLeft = Math.abs(slot.left - b.right);
+    // Distance from slot's right edge to block's left edge (slot sits left of block)
+    const dRight = Math.abs(slot.right - b.left);
+    if (dLeft < minDist) minDist = dLeft;
+    if (dRight < minDist) minDist = dRight;
+  }
+  if (minDist >= GLOW_RADIUS) return BASE_OPACITY;
+  const t = 1 - minDist / GLOW_RADIUS;
+  return BASE_OPACITY + (EDGE_OPACITY - BASE_OPACITY) * t * t;
+}
+
 function computeLayout(
   prepared: PreparedTextWithSegments,
   waves: WaveObstacle[],
@@ -130,9 +151,9 @@ function computeLayout(
     for (let si = 0; si < slots.length; si++) {
       const slot = slots[si]!;
       const slotWidth = slot.right - slot.left;
+      const opacity = edgeOpacity(slot, blocked);
       const line = layoutNextLine(prepared, cursor, slotWidth);
       if (line === null) {
-        // Wrap around to start of text
         cursor = { segmentIndex: 0, graphemeIndex: 0 };
         const retry = layoutNextLine(prepared, cursor, slotWidth);
         if (retry === null) {
@@ -144,6 +165,7 @@ function computeLayout(
           y: Math.round(bandTop),
           text: retry.text,
           width: retry.width,
+          opacity,
         });
         cursor = retry.end;
       } else {
@@ -152,6 +174,7 @@ function computeLayout(
           y: Math.round(bandTop),
           text: line.text,
           width: line.width,
+          opacity,
         });
         cursor = line.end;
       }
@@ -221,6 +244,9 @@ export default function AsciiWaveBackground() {
               span.textContent = line.text;
               span.style.transform = `translate(${line.x}px,${line.y}px)`;
             }
+            if (!prev || prev.opacity !== line.opacity) {
+              span.style.opacity = line.opacity.toFixed(2);
+            }
             if (!prev) span.style.display = "";
           } else if (i < prevLines.length) {
             span.style.display = "none";
@@ -249,7 +275,7 @@ export default function AsciiWaveBackground() {
         position: "fixed",
         inset: 0,
         overflow: "hidden",
-        color: "rgba(148, 163, 184, 0.35)",
+        color: "rgb(148, 163, 184)",
         fontSize: "10px",
         fontFamily: "'Courier New', Courier, monospace",
         lineHeight: `${LINE_HEIGHT}px`,
