@@ -31,8 +31,8 @@ type WaveObstacle = {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const FONT = "14px 'Courier New', Courier, monospace";
-const LINE_HEIGHT = 18;
+const FONT = "10px 'Courier New', Courier, monospace";
+const LINE_HEIGHT = 13;
 const PHASE_SPEED = 0.012;
 const MIN_SLOT_WIDTH = 60; // ignore slivers narrower than ~4 chars
 const SPAN_POOL_SIZE = 250;
@@ -250,7 +250,7 @@ export default function AsciiWaveBackground() {
         inset: 0,
         overflow: "hidden",
         color: "rgba(148, 163, 184, 0.35)",
-        fontSize: "14px",
+        fontSize: "10px",
         fontFamily: "'Courier New', Courier, monospace",
         lineHeight: `${LINE_HEIGHT}px`,
         pointerEvents: "none",
