@@ -146,38 +146,38 @@ function computeLayout(
     const slots = carveTextLineSlots({ left: 0, right: vw }, blocked);
     if (slots.length === 0) continue;
 
-    // Sort slots left-to-right and lay out text into each
-    slots.sort((a, b) => a.left - b.left);
-    for (let si = 0; si < slots.length; si++) {
-      const slot = slots[si]!;
-      const slotWidth = slot.right - slot.left;
-      const opacity = edgeOpacity(slot, blocked);
-      const line = layoutNextLine(prepared, cursor, slotWidth);
-      if (line === null) {
-        cursor = { segmentIndex: 0, graphemeIndex: 0 };
-        const retry = layoutNextLine(prepared, cursor, slotWidth);
-        if (retry === null) {
-          textExhausted = true;
-          break;
-        }
-        lines.push({
-          x: Math.round(slot.left),
-          y: Math.round(bandTop),
-          text: retry.text,
-          width: retry.width,
-          opacity,
-        });
-        cursor = retry.end;
-      } else {
-        lines.push({
-          x: Math.round(slot.left),
-          y: Math.round(bandTop),
-          text: line.text,
-          width: line.width,
-          opacity,
-        });
-        cursor = line.end;
+    // Pick the widest slot only — text flows as one continuous column
+    // that bends around the wave obstacles
+    const best = slots.reduce((a, b) =>
+      b.right - b.left > a.right - a.left ? b : a,
+    );
+    const slotWidth = best.right - best.left;
+    const opacity = edgeOpacity(best, blocked);
+    const line = layoutNextLine(prepared, cursor, slotWidth);
+    if (line === null) {
+      cursor = { segmentIndex: 0, graphemeIndex: 0 };
+      const retry = layoutNextLine(prepared, cursor, slotWidth);
+      if (retry === null) {
+        textExhausted = true;
+        continue;
       }
+      lines.push({
+        x: Math.round(best.left),
+        y: Math.round(bandTop),
+        text: retry.text,
+        width: retry.width,
+        opacity,
+      });
+      cursor = retry.end;
+    } else {
+      lines.push({
+        x: Math.round(best.left),
+        y: Math.round(bandTop),
+        text: line.text,
+        width: line.width,
+        opacity,
+      });
+      cursor = line.end;
     }
   }
 
