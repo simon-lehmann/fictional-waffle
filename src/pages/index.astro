@@ -1,9 +1,11 @@
 ---
 import Herosection from "../components/Herosection.astro";
 import Layout from "../layouts/Layout.astro";
+import AsciiWaveBackground from "../components/AsciiWaveBackground";
 ---
 
 <Layout title="Simon Lehmann">
+  <AsciiWaveBackground client:load />
   <main>
     <Herosection />
   </main>
