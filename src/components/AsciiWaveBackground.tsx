@@ -77,7 +77,7 @@ export default function AsciiWaveBackground() {
         els[i].style.width = maxW + "px";
         // Vary opacity per row with a secondary wave for a shimmer effect
         const rowOpacity =
-          0.12 + 0.08 * Math.sin(i * 0.25 + phase * 1.3);
+          0.35 + 0.15 * Math.sin(i * 0.25 + phase * 1.3);
         els[i].style.opacity = String(rowOpacity);
         cursor = line.end;
       }
@@ -101,7 +101,7 @@ export default function AsciiWaveBackground() {
         position: "fixed",
         inset: 0,
         overflow: "hidden",
-        color: "rgb(100, 116, 139)",
+        color: "rgb(148, 163, 184)",
         fontSize: `${FONT_SIZE}px`,
         fontFamily: "'Courier New', Courier, monospace",
         pointerEvents: "none",
