@@ -104,15 +104,15 @@ const BASE_OPACITY = 0.2;
 const EDGE_OPACITY = 0.7;
 
 function edgeOpacity(slot: Interval, blocked: Interval[]): number {
+  // Distance from slot center to nearest blocked interval
+  const mid = (slot.left + slot.right) / 2;
   let minDist = Infinity;
   for (let i = 0; i < blocked.length; i++) {
     const b = blocked[i]!;
-    // Distance from slot's left edge to block's right edge (slot sits right of block)
-    const dLeft = Math.abs(slot.left - b.right);
-    // Distance from slot's right edge to block's left edge (slot sits left of block)
-    const dRight = Math.abs(slot.right - b.left);
-    if (dLeft < minDist) minDist = dLeft;
-    if (dRight < minDist) minDist = dRight;
+    const bMid = (b.left + b.right) / 2;
+    const dist = Math.abs(mid - bMid) - (b.right - b.left) / 2;
+    const d = Math.max(0, dist);
+    if (d < minDist) minDist = d;
   }
   if (minDist >= GLOW_RADIUS) return BASE_OPACITY;
   const t = 1 - minDist / GLOW_RADIUS;
